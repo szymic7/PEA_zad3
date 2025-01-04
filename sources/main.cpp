@@ -5,6 +5,7 @@
 #include "../headers/Greedy.h"
 #include "../headers/TabuSearch.h"
 #include "../headers/SimulatedAnnealing.h"
+#include "../headers/Genetic.h"
 
 using namespace std;
 
@@ -12,7 +13,7 @@ using namespace std;
 
 void showMenu()
 {
-    int choice = 0, n = 0, choiceNeighborhood = 0, choiceAlfa = 0;
+    int choice = 0, n = 0, choiceNeighborhood = 0, choiceAlfa = 0, choiceMethod = 0;
     string filename;
     bool quit = false;
 
@@ -23,6 +24,7 @@ void showMenu()
     Greedy greedy;
     TabuSearch tabuSearch;
     SimulatedAnnealing simulatedAnnealing;
+    Genetic genetic;
 
     // Kryterium stopu dla algorytmow
     int stopCriterion = 0;
@@ -44,9 +46,16 @@ void showMenu()
         cout << "6) Ustaw wspolczynnik zmiany temperatury dla algorytmu SW" << endl;
         cout << "7) Wykonaj algorytm Symulowanego Wyzarzania" << endl;
         cout << "----------------------------------------------------------" << endl;
-        cout << "8) Zapisz sciezke rozwiazania do pliku .txt" << endl;
-        cout << "9) Wczytaj sciezke z pliku .txt i oblicz koszt" << endl;
-        cout << "10) Zakoncz" << endl;
+        cout << "8) Ustaw rozmiar populacji poczatkowej" << endl;
+        cout << "9) Ustaw wspolczynnik mutacji" << endl;
+        cout << "10) Ustaw wspolczynnik krzyzowania" << endl;
+        cout << "11) Wybierz metode krzyzowania" << endl;
+        cout << "12) Wybierz metode mutacji" << endl;
+        cout << "13) Wykonaj algorytm Genetyczny" << endl;
+        cout << "----------------------------------------------------------" << endl;
+        cout << "14) Zapisz sciezke rozwiazania do pliku .txt" << endl;
+        cout << "15) Wczytaj sciezke z pliku .txt i oblicz koszt" << endl;
+        cout << "16) Zakoncz" << endl;
         cout << "----------------------------------------------------------" << endl;
         cout << "Wybor:";
         cin >> choice;
@@ -296,7 +305,126 @@ void showMenu()
 
                 break;
 
-            case 8: // Zapis sciezki rozwiazania do pliku .txt
+            case 8: // Ustaw rozmiar populacji poczatkowej dla GA
+            {
+                int populationSize = 0;
+                cout << endl << "Podaj rozmiar populacji poczatkowej dla algorytmu Genetycznego: ";
+                cin >> populationSize;
+
+                if (populationSize > 0) {
+                    genetic.setPopulationSize(populationSize);
+                    cout << endl << "Rozmiar populacji poczatkowej zostal ustawiony." << endl;
+                } else {
+                    cout << endl << "Bledna wartosc. Rozmiar populacji poczatkowej nie zostal ustawiony." << endl;
+                }
+
+                break;
+            }
+
+            case 9: // Ustaw wspolczynnik mutacji dla GA
+            {
+                float mutationRate = -1.0;
+                cout << endl << "Podaj wspolczynnik mutacji dla algorytmu Genetycznego, z przedzialu [0.0; 1.0]: ";
+                cin >> mutationRate;
+
+                if (mutationRate >= 0.0 && mutationRate <= 1.0) {
+                    genetic.setMutationRate(mutationRate);
+                    cout << endl << "Wspolczynnik mutacji zostal ustawiony." << endl;
+                } else {
+                    cout << endl << "Bledna wartosc. Wspolczynnik mutacji nie zostal ustawiony." << endl;
+                }
+
+                break;
+            }
+
+            case 10: // Ustaw wspolczynnik krzyzowania dla GA
+            {
+                float crossoverRate = -1.0;
+                cout << endl << "Podaj wspolczynnik krzyzowania dla algorytmu Genetycznego, z przedzialu [0.0; 1.0]: ";
+                cin >> crossoverRate;
+
+                if (crossoverRate >= 0.0 && crossoverRate <= 1.0) {
+                    genetic.setCrossoverRate(crossoverRate);
+                    cout << endl << "Wspolczynnik krzyzowania zostal ustawiony." << endl;
+                } else {
+                    cout << endl << "Bledna wartosc. Wspolczynnik krzyzowania nie zostal ustawiony." << endl;
+                }
+
+                break;
+            }
+
+            case 11: // Wybierz metode krzyzowania dla GA
+            {
+                do {
+
+                    cout << endl << "Wybierz metode krzyzowania:" << endl;
+                    cout << "----------------------------------------------------------------------------------" << endl;
+                    cout << "1) Metoda 1" << endl;
+                    cout << "2) Order crossover (OX)" << endl;
+                    cout << "Wybor:";
+                    cin >> choiceMethod;
+
+                    if(choiceMethod < 1 || choiceMethod > 2) {
+                        cout << endl << "Nieprawidlowy numer wybranej opcji. Sprobuj ponownie." << endl;
+                        choiceMethod = 0;
+                    }
+
+                } while (choiceMethod == 0);
+
+                genetic.setCrossoverMethod(choiceMethod);
+                choiceMethod = 0; // wyzerowanie zmiennej
+
+                break;
+            }
+
+            case 12: // Wybierz metode mutacji dla GA
+            {
+                do {
+
+                    cout << endl << "Wybierz metode mutacji:" << endl;
+                    cout << "----------------------------------------------------------------------------------" << endl;
+                    cout << "1) Metoda 1" << endl;
+                    cout << "2) Metoda 2" << endl;
+                    cout << "Wybor:";
+                    cin >> choiceMethod;
+
+                    if(choiceMethod < 1 || choiceMethod > 2) {
+                        cout << endl << "Nieprawidlowy numer wybranej opcji. Sprobuj ponownie." << endl;
+                        choiceMethod = 0;
+                    }
+
+                } while (choiceMethod == 0);
+
+                genetic.setMutationMethod(choiceMethod);
+                choiceMethod = 0; // wyzerowanie zmiennej
+
+                break;
+            }
+
+            case 13: // Algorytm Genetyczny
+
+                if (costMatrix != nullptr) {
+
+                    genetic.setN(n);
+                    genetic.setCostMatrix(costMatrix);
+
+                    genetic.algorithm();
+//                    result = simulatedAnnealing.getResultVector();
+//                    cout << "Koszt znalezionego rozwiazania: " << simulatedAnnealing.calculatePathCost(result) << endl;
+//                    cout << "Znalezione rozwiazanie: ";
+//                    for(const int& vertice : result)
+//                        cout << vertice << ", ";
+//                    cout << result[0];
+
+                    cout << endl;
+
+                } else {
+                    cout << endl << "Nie utworzono macierzy kosztow. Utworz macierz, aby wykonac algorytm." << endl;
+                }
+
+                break;
+
+            case 14: // Zapis sciezki rozwiazania do pliku .txt
 
                 if (!result.empty()) {
 
@@ -329,7 +457,7 @@ void showMenu()
 
                 break;
 
-            case 9: // wczytanie sciezki z pliku .txt
+            case 15: // wczytanie sciezki z pliku .txt
             {
                 if(costMatrix != nullptr) {
 
@@ -382,7 +510,7 @@ void showMenu()
 
                 break;
             }
-            case 10: // Zakoncz
+            case 16: // Zakoncz
 
                 quit = true;
                 break;
