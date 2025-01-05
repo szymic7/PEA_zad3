@@ -28,15 +28,17 @@ class Genetic : public Algorithm {
 
     individual crossoverMethod1(const individual& parent1, const individual& parent2);
     individual crossoverOX(const individual& parent1, const individual& parent2);
+    individual crossoverPMX(const individual& parent1, const individual& parent2, individual& c1, individual& c2);
 
-    void mutationMethod1(individual& ind);
-    void mutationMethod2(individual& ind);
+    void mutationSwap(individual& ind);
+    void mutationInversion(individual& ind);
 
     int calculateFitness(individual ind);
 
 public:
 
     Genetic();
+    void setTimeLimit(int time);
     void setPopulationSize(int popSize);
     void setMutationRate(float rate);
     void setCrossoverRate(float rate);

@@ -144,7 +144,8 @@ void showMenu()
                 if(stopCriterion > 0) {
                     tabuSearch.setTimeLimit(stopCriterion);
                     simulatedAnnealing.setTimeLimit(stopCriterion);
-                    cout << endl << "Kryterium stopu zostalo ustawione dla algorytmow TS i SW." << endl;
+                    genetic.setTimeLimit(stopCriterion);
+                    cout << endl << "Kryterium stopu zostalo ustawione dla algorytmow TS, SW i GA." << endl;
                 } else {
                     cout << endl << "Bledna wartosc. Kryterium stopu nie zostalo ustawione." << endl;
                 }
@@ -359,8 +360,8 @@ void showMenu()
 
                     cout << endl << "Wybierz metode krzyzowania:" << endl;
                     cout << "----------------------------------------------------------------------------------" << endl;
-                    cout << "1) Metoda 1" << endl;
-                    cout << "2) Order crossover (OX)" << endl;
+                    cout << "1) Order crossover (OX)" << endl;
+                    cout << "2) Partially Matched Crossover (PMX)" << endl;
                     cout << "Wybor:";
                     cin >> choiceMethod;
 
