@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <iostream>
 #include <unordered_map>
+#include <cassert>
 
 using namespace std;
 
@@ -145,15 +146,14 @@ individual Genetic::crossoverOX(const individual& parent1, const individual& par
 
 //-------------------------------------------------------------------------------------
 
-individual Genetic::crossoverPMX(const individual& parent1, const individual& parent2, individual& c1, individual& c2) {
+void Genetic::crossoverPMX(const individual& parent1, const individual& parent2, individual& c1, individual& c2) {
 
-    individual child1, child2;
-    child1.chromosome.resize(n, -1); // Initialize child chromosome with -1
-    child2.chromosome.resize(n, -1); // Initialize child chromosome with -1
-
-    std::vector<int> map1, map2;
-    map1.resize(n, -1);
-    map2.resize(n, -1);
+    struct individual child1, child2;
+    //child1.chromosome.resize(n, -1); // Initialize child chromosome with -1
+    //child2.chromosome.resize(n, -1); // Initialize child chromosome with -1
+    std::vector<int> map1(n, -1), map2(n, -1);
+    child1.chromosome.assign(n, -1);
+    child2.chromosome.assign(n, -1);
 
     // 1) Wyznaczenie sekcji dopasowania w rodzicach parent1 i parent2
     std::uniform_int_distribution<> dist(0, n - 1);
@@ -173,7 +173,7 @@ individual Genetic::crossoverPMX(const individual& parent1, const individual& pa
     }
 
     for (int i = 0; i < n; i++) {
-        cout << "Wchodzimy do 1. petli for - wstawianie genow dla child1." << endl;
+        //cout << "Wchodzimy do 1. petli for - wstawianie genow dla child1." << endl;
         if (child1.chromosome[i] == -1) {
             // Jesli gen z chromosomu parent2 nie wystepuje w chromosomie dziecka child1
             if (std::find(child1.chromosome.begin() + start, child1.chromosome.begin() + end + 1, parent2.chromosome[i]) == child1.chromosome.begin() + end + 1)
@@ -191,7 +191,7 @@ individual Genetic::crossoverPMX(const individual& parent1, const individual& pa
     }
 
     for (int i = 0; i < n; i++) {
-        cout << "Wchodzimy do 2. petli for - wstawianie genow dla child2." << endl;
+        //cout << "Wchodzimy do 2. petli for - wstawianie genow dla child2." << endl;
         if (child2.chromosome[i] == -1) {
             // Jesli gen z chromosomu parent1 nie wystepuje w chromosomie dziecka child2
             if (std::find(child2.chromosome.begin() + start, child2.chromosome.begin() + end + 1, parent1.chromosome[i]) == child2.chromosome.begin() + end + 1)
@@ -208,18 +208,11 @@ individual Genetic::crossoverPMX(const individual& parent1, const individual& pa
         }
     }
 
-    cout << "Przed przypisaniem" << endl;
-
-    //child1.fitness = calculateFitness(child1);
-    //child2.fitness = calculateFitness(child2);
-
     c1 = child1;
     c2 = child2;
 
-    cout << "Po przypisaniu" << endl;
-
-    map1.clear();
-    map2.clear();
+    //map1.clear();
+    //map2.clear();
 
     // 3) Create a mapping table for the subsegment
 //    std::unordered_map<int, int> mapping;
@@ -289,6 +282,20 @@ individual Genetic::crossoverPMX(const individual& parent1, const individual& pa
     }*/
 
     //return child;
+}
+
+//-------------------------------------------------------------------------------------
+
+bool Genetic::isValidChromosome(const std::vector<int>& chromosome) {
+    std::vector<int> counts(n, 0);
+    for (int gene : chromosome) {
+        if (gene < 0 || gene >= n) return false; // Invalid gene
+        counts[gene]++;
+    }
+    for (int count : counts) {
+        if (count != 1) return false; // Missing or duplicate gene
+    }
+    return true;
 }
 
 //-------------------------------------------------------------------------------------
@@ -409,13 +416,15 @@ void Genetic::algorithm() {
                     offspring1 = crossoverOX(parent1, parent2);
                     offspring2 = crossoverOX(parent2, parent1);
                 } else {
-                    crossoverPMX(parent1, parent2, offspring1, offspring2);
-                    //offspring1 = crossoverPMX(parent1, parent2);
-                    //offspring2 = crossoverPMX(parent2, parent1);
+                    do {
+                        crossoverPMX(parent1, parent2, offspring1, offspring2);
+                    } while(!isValidChromosome(offspring1.chromosome) || !isValidChromosome(offspring2.chromosome));
+                    // offspring1 = crossoverPMX(parent1, parent2);
+                    // offspring2 = crossoverPMX(parent2, parent1);
                 }
             }
             else {
-                // No crossover; offspring = exact copies
+                // No crossover; offspring = exact copies of parents
                 offspring1 = parent1;
                 offspring2 = parent2;
             }

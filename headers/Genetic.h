@@ -11,6 +11,14 @@ using namespace std;
 struct individual {
     vector<int> chromosome;
     int fitness;
+
+    /*individual& operator=(const individual& other) {
+        if (this != &other) {
+            chromosome = other.chromosome;
+            fitness = other.fitness;
+        }
+        return *this;
+    }*/
 };
 
 class Genetic : public Algorithm {
@@ -28,7 +36,9 @@ class Genetic : public Algorithm {
 
     individual crossoverMethod1(const individual& parent1, const individual& parent2);
     individual crossoverOX(const individual& parent1, const individual& parent2);
-    individual crossoverPMX(const individual& parent1, const individual& parent2, individual& c1, individual& c2);
+    void crossoverPMX(const individual& parent1, const individual& parent2, individual& c1, individual& c2);
+
+    bool isValidChromosome(const std::vector<int>& chromosome);
 
     void mutationSwap(individual& ind);
     void mutationInversion(individual& ind);
