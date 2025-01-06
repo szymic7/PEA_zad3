@@ -37,6 +37,7 @@ class Genetic : public Algorithm {
     individual crossoverMethod1(const individual& parent1, const individual& parent2);
     individual crossoverOX(const individual& parent1, const individual& parent2);
     void crossoverPMX(const individual& parent1, const individual& parent2, individual& c1, individual& c2);
+    individual crossoverERX(const individual& parent1, const individual& parent2);
 
     bool isValidChromosome(const std::vector<int>& chromosome);
 
@@ -44,6 +45,8 @@ class Genetic : public Algorithm {
     void mutationInversion(individual& ind);
 
     int calculateFitness(individual ind);
+
+    void succession(std::vector<individual> &population, std::vector<individual> &subPopulation);
 
 public:
 

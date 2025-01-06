@@ -14,9 +14,9 @@ Genetic::Genetic() : Algorithm(), gen(std::random_device{}()) {
 
     timeLimit = 0;
 
-    populationSize = 300; // wartosc domyslna
+    populationSize = 1000; // wartosc domyslna
     mutationRate = 0.1; // wartosc domyslna
-    crossoverRate = 0.9; // wartosc domyslna
+    crossoverRate = 0.8; // wartosc domyslna
 
     mutationMethod = 1; // wartosc domyslna
     crossoverMethod = 1; // wartosc domyslna
@@ -149,11 +149,10 @@ individual Genetic::crossoverOX(const individual& parent1, const individual& par
 void Genetic::crossoverPMX(const individual& parent1, const individual& parent2, individual& c1, individual& c2) {
 
     struct individual child1, child2;
-    //child1.chromosome.resize(n, -1); // Initialize child chromosome with -1
-    //child2.chromosome.resize(n, -1); // Initialize child chromosome with -1
-    std::vector<int> map1(n, -1), map2(n, -1);
     child1.chromosome.assign(n, -1);
     child2.chromosome.assign(n, -1);
+    std::vector<int> map1(n, -1), map2(n, -1);
+
 
     // 1) Wyznaczenie sekcji dopasowania w rodzicach parent1 i parent2
     std::uniform_int_distribution<> dist(0, n - 1);
@@ -282,6 +281,81 @@ void Genetic::crossoverPMX(const individual& parent1, const individual& parent2,
     }*/
 
     //return child;
+}
+
+//-------------------------------------------------------------------------------------
+
+individual Genetic::crossoverERX(const individual& parent1, const individual& parent2) {
+    individual child;
+    child.chromosome.resize(n, -1); // Initialize child chromosome with -1
+
+    // Step 1: Build the Edge Table
+    std::vector<std::vector<int>> edgeTable(n);
+
+    // Add edges from parent1
+    for (int i = 0; i < n; i++) {
+        int prev = (i == 0) ? parent1.chromosome[n - 1] : parent1.chromosome[i - 1];
+        int next = (i == n - 1) ? parent1.chromosome[0] : parent1.chromosome[i + 1];
+        edgeTable[parent1.chromosome[i]].push_back(prev);
+        edgeTable[parent1.chromosome[i]].push_back(next);
+    }
+
+    // Add edges from parent2
+    for (int i = 0; i < n; i++) {
+        int prev = (i == 0) ? parent2.chromosome[n - 1] : parent2.chromosome[i - 1];
+        int next = (i == n - 1) ? parent2.chromosome[0] : parent2.chromosome[i + 1];
+        edgeTable[parent2.chromosome[i]].push_back(prev);
+        edgeTable[parent2.chromosome[i]].push_back(next);
+    }
+
+    // Remove duplicates in the edge table
+    for (int i = 0; i < n; i++) {
+        std::sort(edgeTable[i].begin(), edgeTable[i].end());
+        edgeTable[i].erase(std::unique(edgeTable[i].begin(), edgeTable[i].end()), edgeTable[i].end());
+    }
+
+    // Step 2: Build the Child Chromosome
+    std::vector<bool> visited(n, false); // Track visited cities
+    int currentCity = parent1.chromosome[0]; // Start from the first city in parent1
+    child.chromosome[0] = currentCity;
+    visited[currentCity] = true;
+
+    for (int i = 1; i < n; i++) {
+        // Remove currentCity from the edge table
+        for (int& neighbor : edgeTable[currentCity]) {
+            auto it = std::find(edgeTable[neighbor].begin(), edgeTable[neighbor].end(), currentCity);
+            if (it != edgeTable[neighbor].end()) {
+                edgeTable[neighbor].erase(it);
+            }
+        }
+
+        // Select the next city
+        int nextCity = -1;
+        if (!edgeTable[currentCity].empty()) {
+            // Choose the neighbor with the fewest edges
+            nextCity = edgeTable[currentCity][0];
+            for (int neighbor : edgeTable[currentCity]) {
+                if (edgeTable[neighbor].size() < edgeTable[nextCity].size()) {
+                    nextCity = neighbor;
+                }
+            }
+        } else {
+            // If no neighbors are available, randomly pick an unvisited city
+            for (int city = 0; city < n; city++) {
+                if (!visited[city]) {
+                    nextCity = city;
+                    break;
+                }
+            }
+        }
+
+        // Assign next city to the child
+        child.chromosome[i] = nextCity;
+        visited[nextCity] = true;
+        currentCity = nextCity;
+    }
+
+    return child;
 }
 
 //-------------------------------------------------------------------------------------
@@ -416,11 +490,11 @@ void Genetic::algorithm() {
                     offspring1 = crossoverOX(parent1, parent2);
                     offspring2 = crossoverOX(parent2, parent1);
                 } else {
-                    do {
-                        crossoverPMX(parent1, parent2, offspring1, offspring2);
-                    } while(!isValidChromosome(offspring1.chromosome) || !isValidChromosome(offspring2.chromosome));
-                    // offspring1 = crossoverPMX(parent1, parent2);
-                    // offspring2 = crossoverPMX(parent2, parent1);
+                    //do {
+                    //    crossoverPMX(parent1, parent2, offspring1, offspring2);
+                    //} while(!isValidChromosome(offspring1.chromosome) || !isValidChromosome(offspring2.chromosome));
+                    offspring1 = crossoverERX(parent1, parent2);
+                    offspring2 = crossoverERX(parent2, parent1);
                 }
             }
             else {
@@ -457,8 +531,10 @@ void Genetic::algorithm() {
             }
         }
 
-        // 2b) Replace old population
-        population = newPopulation;
+        // 2b) Succession
+        // population = newPopulation;
+        succession(population, newPopulation);
+
 
         // 2c) Track the best individual in the new population
         for (auto &ind : population) {
@@ -483,3 +559,26 @@ void Genetic::algorithm() {
 }
 
 //-------------------------------------------------------------------------------------
+
+void Genetic::succession(std::vector<individual> &population, std::vector<individual> &subPopulation) {
+
+    // Zostawiamy 10% najlepiej przystosowanych osobnikow z populacji
+    int elitismCount = populationSize * 0.1;
+
+    // Sort the current population by fitness (ascending: lower is better)
+    std::sort(population.begin(), population.end(), [](const individual& a, const individual& b) {
+        return a.fitness < b.fitness;
+    });
+
+    // Sort the offspring population by fitness
+    std::sort(subPopulation.begin(), subPopulation.end(), [](const individual& a, const individual& b) {
+        return a.fitness < b.fitness;
+    });
+
+    // Retain the top elitismCount individuals in the current population
+    for (int i = elitismCount; i < population.size(); i++) {
+        population[i] = subPopulation[i - elitismCount]; // Replace the rest with offspring
+    }
+}
+
+//----------------------------------------------------------------------------------------
