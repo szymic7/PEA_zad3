@@ -1,0 +1,8 @@
+# ninja log v5
+2	233	7577743503851409	build.ninja	f7ba3c6abdc93075
+10	502	7576193822978196	CMakeFiles/PEA_zad3.dir/sources/Greedy.cpp.obj	b4a499cbb24df77
+22	883	7576193826784751	CMakeFiles/PEA_zad3.dir/sources/Algorithm.cpp.obj	bd0371cef25b312
+5	1917	7576193837106570	CMakeFiles/PEA_zad3.dir/sources/SimulatedAnnealing.cpp.obj	a0c3bc7b24f1ccb6
+1	1362	7576193831572282	CMakeFiles/PEA_zad3.dir/sources/main.cpp.obj	e43e94eccef569ce
+15	1525	7576193833184162	CMakeFiles/PEA_zad3.dir/sources/TabuSearch.cpp.obj	21438aec15337fe2
+1918	2303	7576193840940582	PEA_zad3.exe	bb71a2d4fdf5b26b

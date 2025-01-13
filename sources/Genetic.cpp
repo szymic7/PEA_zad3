@@ -15,7 +15,7 @@ Genetic::Genetic() : Algorithm(), gen(std::random_device{}()) {
     timeLimit = 0;
 
     populationSize = 1000; // wartosc domyslna
-    mutationRate = 0.1; // wartosc domyslna
+    mutationRate = 0.01; // wartosc domyslna
     crossoverRate = 0.8; // wartosc domyslna
 
     mutationMethod = 1; // wartosc domyslna
@@ -63,10 +63,10 @@ void Genetic::setCrossoverMethod(int method) {
 individual Genetic::tournamentSelection(const std::vector<individual> &population, int tournamentSize) {
     std::uniform_int_distribution<> dist(0, population.size() - 1);
 
-    // Pick the first random individual as 'best' initially
+    // Wybranie losowego uczestnikow turnieju jako poczatkowego
     individual best = population[dist(gen)];
 
-    // Compare against 'tournamentSize - 1' more random picks
+    // Porownanie z 'tournamentSize - 1' osobnikami, losowo wybranymi z populacji
     for(int i = 1; i < tournamentSize; i++) {
         const individual &competitor = population[dist(gen)];
         if (competitor.fitness < best.fitness) {
@@ -289,10 +289,10 @@ individual Genetic::crossoverERX(const individual& parent1, const individual& pa
     individual child;
     child.chromosome.resize(n, -1); // Initialize child chromosome with -1
 
-    // Step 1: Build the Edge Table
+    // 1) Utworzenie listy sasiedztwa dla wszystkich wierzcholkow
     std::vector<std::vector<int>> edgeTable(n);
 
-    // Add edges from parent1
+    // Dodanie sasiadow z parent1 do listy
     for (int i = 0; i < n; i++) {
         int prev = (i == 0) ? parent1.chromosome[n - 1] : parent1.chromosome[i - 1];
         int next = (i == n - 1) ? parent1.chromosome[0] : parent1.chromosome[i + 1];
@@ -300,7 +300,7 @@ individual Genetic::crossoverERX(const individual& parent1, const individual& pa
         edgeTable[parent1.chromosome[i]].push_back(next);
     }
 
-    // Add edges from parent2
+    // Dodanie sasiadow z parent2 do listy
     for (int i = 0; i < n; i++) {
         int prev = (i == 0) ? parent2.chromosome[n - 1] : parent2.chromosome[i - 1];
         int next = (i == n - 1) ? parent2.chromosome[0] : parent2.chromosome[i + 1];
@@ -308,20 +308,23 @@ individual Genetic::crossoverERX(const individual& parent1, const individual& pa
         edgeTable[parent2.chromosome[i]].push_back(next);
     }
 
-    // Remove duplicates in the edge table
+
+    // Usuniecie powtarzajacych sie sasiadow
     for (int i = 0; i < n; i++) {
         std::sort(edgeTable[i].begin(), edgeTable[i].end());
         edgeTable[i].erase(std::unique(edgeTable[i].begin(), edgeTable[i].end()), edgeTable[i].end());
     }
 
-    // Step 2: Build the Child Chromosome
+    // 2) Utworznie chromosomu potomka
     std::vector<bool> visited(n, false); // Track visited cities
     int currentCity = parent1.chromosome[0]; // Start from the first city in parent1
+    //int currentCity = gen() % n; // Random first city
     child.chromosome[0] = currentCity;
     visited[currentCity] = true;
 
     for (int i = 1; i < n; i++) {
-        // Remove currentCity from the edge table
+
+        // Usuwamy wszystkie wystapienia wierzcholka currentCity w liscie sasiedztwa
         for (int& neighbor : edgeTable[currentCity]) {
             auto it = std::find(edgeTable[neighbor].begin(), edgeTable[neighbor].end(), currentCity);
             if (it != edgeTable[neighbor].end()) {
@@ -329,18 +332,26 @@ individual Genetic::crossoverERX(const individual& parent1, const individual& pa
             }
         }
 
-        // Select the next city
+        // Wybor nastepnego wierzcholka
         int nextCity = -1;
-        if (!edgeTable[currentCity].empty()) {
-            // Choose the neighbor with the fewest edges
+        if (!edgeTable[currentCity].empty())  // Jesli lista wierzcholka currentCity nie jest pusta
+        {
+            // Wybieramy sasiada currentCity z najkrotsza lista sasiedztwa
             nextCity = edgeTable[currentCity][0];
             for (int neighbor : edgeTable[currentCity]) {
                 if (edgeTable[neighbor].size() < edgeTable[nextCity].size()) {
                     nextCity = neighbor;
                 }
             }
-        } else {
-            // If no neighbors are available, randomly pick an unvisited city
+        }
+        else // Jesli lista sasiadow wierzcholka currentCity jest pusta
+        {
+            // Losowy wybor nastepnego wierzcholka
+            /*do {
+                nextCity = gen() % n;
+            } while (visited[nextCity]);*/
+
+            // Wstawienie nastepnego miasta jesli nie wystepuje jeszcze w chromosomie dziecka
             for (int city = 0; city < n; city++) {
                 if (!visited[city]) {
                     nextCity = city;
@@ -349,7 +360,7 @@ individual Genetic::crossoverERX(const individual& parent1, const individual& pa
             }
         }
 
-        // Assign next city to the child
+        // Zapisanie miasta (genu) do chromosomu
         child.chromosome[i] = nextCity;
         visited[nextCity] = true;
         currentCity = nextCity;
@@ -397,6 +408,29 @@ void Genetic::mutationInversion(individual &ind) {
     if (start > end) std::swap(start, end);
 
     std::reverse(ind.chromosome.begin() + start, ind.chromosome.begin() + end + 1);
+}
+
+//-------------------------------------------------------------------------------------
+
+void Genetic::mutationInsert(individual &ind) {
+    std::uniform_int_distribution<> dist(0, n - 1);
+    int source, target;
+    do {
+        source = dist(gen);
+        target = dist(gen);
+    } while (source == target);
+
+    // Usuniecie genu o indeksie source i przechowanie go w zmiennej tymczasowej
+    int gene = ind.chromosome[source];
+    ind.chromosome.erase(ind.chromosome.begin() + source);
+
+    // Dostosowanie indeksu target, jesli source < target (po usunieciu z pozycji source nastepuje przesuniecie indeksow)
+    if (source < target) {
+        target--;
+    }
+
+    // Wstawienie usunietego genu na odpowiednia pozycje
+    ind.chromosome.insert(ind.chromosome.begin() + target, gene);
 }
 
 //-------------------------------------------------------------------------------------
@@ -459,96 +493,100 @@ void Genetic::algorithm() {
     //individual bestIndividual = population[0];
 
     auto startTime = std::chrono::steady_clock::now();
+    auto lastPrintTime = startTime; // Track the last time fitness was printed
 
     cout << endl << "Wchodzimy do petli. Na razie wszystko ok." << endl;
 
     // Glowna petla
     while (std::chrono::duration<double>(std::chrono::steady_clock::now() - startTime).count() < timeLimit) {
 
-        vector<individual> newPopulation;
-        newPopulation.reserve(populationSize);
+        vector<individual> subpopulation;
+        subpopulation.reserve(populationSize);
 
-        // 2a) Create new population
-        while (static_cast<int>(newPopulation.size()) < populationSize)
+        // Tworzenie nowej populacji
+        while (static_cast<int>(subpopulation.size()) < populationSize)
         {
-            // --- Selection ---
-            individual parent1 = tournamentSelection(population, 5); // e.g. tournament size = 5
+            // Selekcja
+            individual parent1 = tournamentSelection(population, 5);
             individual parent2 = tournamentSelection(population, 5);
 
-            individual offspring1, offspring2;
+            individual child1, child2;
 
-            // --- Crossover ---
-            // Generate random float in [0,1)
+            // Krzyzowanie
             uniform_real_distribution<float> floatDist(0.0f, 1.0f);
             float crossoverRoll = floatDist(gen);
 
             if (crossoverRoll < crossoverRate) {
-                // Perform chosen crossover method
+
+                // Metoda krzyzowania w zaleznosci od parametru crossoverMethod
                 if (crossoverMethod == 1) {
-                    //offspring1 = crossoverMethod1(parent1, parent2);
-                    //offspring2 = crossoverMethod1(parent2, parent1);
-                    offspring1 = crossoverOX(parent1, parent2);
-                    offspring2 = crossoverOX(parent2, parent1);
+                    child1 = crossoverOX(parent1, parent2);
+                    child2 = crossoverOX(parent2, parent1);
                 } else {
-                    //do {
-                    //    crossoverPMX(parent1, parent2, offspring1, offspring2);
-                    //} while(!isValidChromosome(offspring1.chromosome) || !isValidChromosome(offspring2.chromosome));
-                    offspring1 = crossoverERX(parent1, parent2);
-                    offspring2 = crossoverERX(parent2, parent1);
+//                    do {
+//                        crossoverPMX(parent1, parent2, child1, child2);
+//                    } while(!isValidChromosome(child1.chromosome) || !isValidChromosome(child2.chromosome));
+                    child1 = crossoverERX(parent1, parent2);
+                    child2 = crossoverERX(parent2, parent1);
                 }
             }
             else {
-                // No crossover; offspring = exact copies of parents
-                offspring1 = parent1;
-                offspring2 = parent2;
+                // Brak krzyzowania - potomkowie to kopie rodzicow
+                child1 = parent1;
+                child2 = parent2;
             }
 
-            // --- Mutation ---
+            // Mutacje
             float mutationRoll1 = floatDist(gen);
             if (mutationRoll1 < mutationRate) {
                 if (mutationMethod == 1)
-                    mutationSwap(offspring1);
+                    mutationSwap(child1);
                 else
-                    mutationInversion(offspring1);
+                    mutationInsert(child1);
             }
 
             float mutationRoll2 = floatDist(gen);
             if (mutationRoll2 < mutationRate) {
                 if (mutationMethod == 1)
-                    mutationSwap(offspring2);
+                    mutationSwap(child2);
                 else
-                    mutationInversion(offspring2);
+                    mutationInsert(child1);
             }
 
-            // Recalculate fitness after crossover/mutation
-            offspring1.fitness = calculateFitness(offspring1);
-            offspring2.fitness = calculateFitness(offspring2);
+            // Obliczenie wartosci funkcji przystosowania po operacjach krzyzowania i mutacji
+            child1.fitness = calculateFitness(child1);
+            child2.fitness = calculateFitness(child2);
 
-            // Add to new population
-            newPopulation.push_back(offspring1);
-            if (static_cast<int>(newPopulation.size()) < populationSize) {
-                newPopulation.push_back(offspring2);
+            // Dodanie potomkow do subpopulacji
+            subpopulation.push_back(child1);
+            if (static_cast<int>(subpopulation.size()) < populationSize) {
+                subpopulation.push_back(child2);
             }
         }
 
-        // 2b) Succession
-        // population = newPopulation;
-        succession(population, newPopulation);
+        // Sukcesja
+        //population = subpopulation;
+        succession(population, subpopulation);
 
 
-        // 2c) Track the best individual in the new population
+        // Znalezienie najlepiej przystosowanego osobnika w populacji
         for (auto &ind : population) {
             if (ind.fitness < bestIndividual.fitness) {
                 bestIndividual = ind;
             }
         }
 
-        // (Optional) Print or log current best
-        // std::cout << "Current best fitness = " << bestIndividual.fitness << std::endl;
+        // Wyswietlenie najlepszego aktualnego rozwiazania co 10 sekund
+        auto currentTime = std::chrono::steady_clock::now();
+        if (std::chrono::duration<double>(currentTime - lastPrintTime).count() >= 10.0) {
+            cout << "Czas: "
+                 << std::chrono::duration<double>(currentTime - startTime).count()
+                 << " s, Najlepszy koszt: " << bestIndividual.fitness << endl;
+            lastPrintTime = currentTime;
+        }
 
     }
 
-    // Algorithm finished - 'bestIndividual' holds the best found solution
     cout << "Koszt znalezionego rozwiazania: " << bestIndividual.fitness << endl;
     cout << "Znalezione rozwiazanie: ";
     for (auto city : bestIndividual.chromosome) {
@@ -570,7 +608,7 @@ void Genetic::succession(std::vector<individual> &population, std::vector<indivi
         return a.fitness < b.fitness;
     });
 
-    // Sort the offspring population by fitness
+    // Sort the subpopulation population by fitness
     std::sort(subPopulation.begin(), subPopulation.end(), [](const individual& a, const individual& b) {
         return a.fitness < b.fitness;
     });

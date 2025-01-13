@@ -361,7 +361,7 @@ void showMenu()
                     cout << endl << "Wybierz metode krzyzowania:" << endl;
                     cout << "----------------------------------------------------------------------------------" << endl;
                     cout << "1) Order crossover (OX)" << endl;
-                    cout << "2) Partially Matched Crossover (PMX)" << endl;
+                    cout << "2) Edge Recombination Crossover (ERX)" << endl;
                     cout << "Wybor:";
                     cin >> choiceMethod;
 
@@ -384,8 +384,8 @@ void showMenu()
 
                     cout << endl << "Wybierz metode mutacji:" << endl;
                     cout << "----------------------------------------------------------------------------------" << endl;
-                    cout << "1) Metoda 1" << endl;
-                    cout << "2) Metoda 2" << endl;
+                    cout << "1) Swap" << endl;
+                    cout << "2) Insert" << endl;
                     cout << "Wybor:";
                     cin >> choiceMethod;
 

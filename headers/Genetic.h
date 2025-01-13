@@ -43,6 +43,7 @@ class Genetic : public Algorithm {
 
     void mutationSwap(individual& ind);
     void mutationInversion(individual& ind);
+    void mutationInsert(individual &ind);
 
     int calculateFitness(individual ind);
 
